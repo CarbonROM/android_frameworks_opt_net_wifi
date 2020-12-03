@@ -93,6 +93,7 @@ import com.android.server.wifi.hotspot2.anqp.OsuProviderInfo;
 import com.android.server.wifi.hotspot2.anqp.eap.EAPMethod;
 import com.android.server.wifi.util.InformationElementUtil;
 import com.android.server.wifi.util.InformationElementUtil.RoamingConsortium;
+import com.android.server.wifi.util.WifiPermissionsUtil;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -176,6 +177,7 @@ public class PasspointManagerTest {
     @Mock TelephonyManager mTelephonyManager;
     @Mock TelephonyManager mDataTelephonyManager;
     @Mock SubscriptionManager mSubscriptionManager;
+    @Mock WifiPermissionsUtil mWifiPermissionsUtil;
 
     Handler mHandler;
     TestLooper mLooper;
@@ -202,11 +204,13 @@ public class PasspointManagerTest {
                 .thenReturn(mPasspointProvisioner);
         when(mContext.getSystemService(Context.APP_OPS_SERVICE)).thenReturn(mAppOpsManager);
         when(mWifiInjector.getClientModeImpl()).thenReturn(mClientModeImpl);
+        when(mWifiPermissionsUtil.doesUidBelongToCurrentUser(anyInt())).thenReturn(true);
         mLooper = new TestLooper();
         mHandler = new Handler(mLooper.getLooper());
         mManager = new PasspointManager(mContext, mWifiInjector, mHandler, mWifiNative,
                 mWifiKeyStore, mClock, mSimAccessor, mObjectFactory, mWifiConfigManager,
-                mWifiConfigStore, mWifiMetrics, mTelephonyManager, mSubscriptionManager);
+                mWifiConfigStore, mWifiMetrics, mTelephonyManager, mSubscriptionManager,
+                mWifiPermissionsUtil);
         ArgumentCaptor<PasspointEventHandler.Callbacks> callbacks =
                 ArgumentCaptor.forClass(PasspointEventHandler.Callbacks.class);
         verify(mObjectFactory).makePasspointEventHandler(any(WifiNative.class),
@@ -539,8 +543,8 @@ public class PasspointManagerTest {
         // Provider index start with 0, should be 1 after adding a provider.
         assertEquals(1, mSharedDataSource.getProviderIndex());
 
-        // Remove the provider as the creator app.
-        assertTrue(mManager.removeProvider(TEST_CREATOR_UID, false, TEST_FQDN));
+        // Remove the provider.
+        assertTrue(mManager.removeProvider(TEST_CREATOR_UID, TEST_FQDN));
         verify(provider).uninstallCertsAndKeys();
         verify(mWifiConfigManager).saveToStore(true);
         verify(mWifiMetrics).incrementNumPasspointProviderUninstallation();
@@ -582,8 +586,8 @@ public class PasspointManagerTest {
         // Provider index start with 0, should be 1 after adding a provider.
         assertEquals(1, mSharedDataSource.getProviderIndex());
 
-        // Remove the provider as a privileged non-creator app.
-        assertTrue(mManager.removeProvider(TEST_UID, true, TEST_FQDN));
+        // Remove the provider.
+        assertTrue(mManager.removeProvider(TEST_CREATOR_UID, TEST_FQDN));
         verify(provider).uninstallCertsAndKeys();
         verify(mWifiConfigManager).saveToStore(true);
         verify(mWifiMetrics).incrementNumPasspointProviderUninstallation();
@@ -712,7 +716,7 @@ public class PasspointManagerTest {
      */
     @Test
     public void removeNonExistingProvider() throws Exception {
-        assertFalse(mManager.removeProvider(TEST_CREATOR_UID, true, TEST_FQDN));
+        assertFalse(mManager.removeProvider(TEST_CREATOR_UID, TEST_FQDN));
         verify(mWifiMetrics).incrementNumPasspointProviderUninstallation();
         verify(mWifiMetrics, never()).incrementNumPasspointProviderUninstallSuccess();
     }
@@ -1519,7 +1523,7 @@ public class PasspointManagerTest {
         PasspointManager passpointManager = new PasspointManager(mContext, mWifiInjector,
                 mHandler, mWifiNative, mWifiKeyStore, mClock, mSimAccessor, mObjectFactory,
                 mWifiConfigManager, mWifiConfigStore, mWifiMetrics, mTelephonyManager,
-                mSubscriptionManager);
+                mSubscriptionManager, mWifiPermissionsUtil);
 
         assertNull(passpointManager.createEphemeralPasspointConfigForCarrier(
                 EAPConstants.EAP_TLS));
@@ -1537,7 +1541,7 @@ public class PasspointManagerTest {
         PasspointManager passpointManager = new PasspointManager(mContext, mWifiInjector,
                 mHandler, mWifiNative, mWifiKeyStore, mClock, mSimAccessor, mObjectFactory,
                 mWifiConfigManager, mWifiConfigStore, mWifiMetrics, mTelephonyManager,
-                mSubscriptionManager);
+                mSubscriptionManager, mWifiPermissionsUtil);
 
         PasspointConfiguration result =
                 passpointManager.createEphemeralPasspointConfigForCarrier(
@@ -1638,7 +1642,7 @@ public class PasspointManagerTest {
             PasspointManager passpointManager = new PasspointManager(mContext, mWifiInjector,
                     mHandler, mWifiNative, mWifiKeyStore, mClock, mSimAccessor, mObjectFactory,
                     mWifiConfigManager, mWifiConfigStore, mWifiMetrics, mTelephonyManager,
-                    mSubscriptionManager);
+                    mSubscriptionManager, mWifiPermissionsUtil);
             assertEquals(EAPConstants.EAP_AKA,
                     passpointManager.findEapMethodFromNAIRealmMatchedWithCarrier(scanDetails));
         } finally {
@@ -1667,7 +1671,7 @@ public class PasspointManagerTest {
             PasspointManager passpointManager = new PasspointManager(mContext, mWifiInjector,
                     mHandler, mWifiNative, mWifiKeyStore, mClock, mSimAccessor, mObjectFactory,
                     mWifiConfigManager, mWifiConfigStore, mWifiMetrics, mTelephonyManager,
-                    mSubscriptionManager);
+                    mSubscriptionManager, mWifiPermissionsUtil);
 
             assertEquals(-1,
                     passpointManager.findEapMethodFromNAIRealmMatchedWithCarrier(scanDetails));

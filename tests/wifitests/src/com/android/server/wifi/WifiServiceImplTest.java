@@ -3927,7 +3927,7 @@ public class WifiServiceImplTest {
                 mWifiServiceImpl.addNetworkSuggestions(mock(List.class), TEST_PACKAGE_NAME));
 
         verify(mWifiNetworkSuggestionsManager, times(2)).add(
-                any(), eq(Binder.getCallingUid()),  eq(TEST_PACKAGE_NAME));
+                any(), eq(Binder.getCallingUid()), eq(TEST_PACKAGE_NAME));
     }
 
     /**
@@ -3938,12 +3938,12 @@ public class WifiServiceImplTest {
     public void testRemoveNetworkSuggestions() {
         setupClientModeImplHandlerForRunWithScissors();
 
-        when(mWifiNetworkSuggestionsManager.remove(any(), anyInt(), anyString()))
+        when(mWifiNetworkSuggestionsManager.remove(any(),  anyInt(), anyString()))
                 .thenReturn(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_REMOVE_INVALID);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_REMOVE_INVALID,
                 mWifiServiceImpl.removeNetworkSuggestions(mock(List.class), TEST_PACKAGE_NAME));
 
-        when(mWifiNetworkSuggestionsManager.remove(any(), anyInt(), anyString()))
+        when(mWifiNetworkSuggestionsManager.remove(any(),  anyInt(), anyString()))
                 .thenReturn(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS);
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiServiceImpl.removeNetworkSuggestions(mock(List.class), TEST_PACKAGE_NAME));
@@ -3953,8 +3953,8 @@ public class WifiServiceImplTest {
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL,
                 mWifiServiceImpl.removeNetworkSuggestions(mock(List.class), TEST_PACKAGE_NAME));
 
-        verify(mWifiNetworkSuggestionsManager, times(2)).remove(any(), anyInt(),
-                eq(TEST_PACKAGE_NAME));
+        verify(mWifiNetworkSuggestionsManager, times(2)).remove(
+                any(), eq(Binder.getCallingUid()), eq(TEST_PACKAGE_NAME));
     }
 
     /**
